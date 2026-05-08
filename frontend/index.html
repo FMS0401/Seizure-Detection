@@ -1,173 +1,157 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Seizure Detection</title>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Roboto:wght@400;500;700&display=swap"
-    rel="stylesheet"
-  >
-  <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EEG Seizure Detection</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
-<!-- ── EEG background decoration ───────────────────────────────────── -->
-<div class="eeg-deco">
-  <svg viewBox="0 0 2000 60" preserveAspectRatio="none">
-    <polyline fill="none" stroke="#00d4ff" stroke-width="1.5"
-      points="0,30 50,30 60,10 70,50 80,20 90,40 100,30 150,30 160,5
-              175,55 190,30 240,30 250,15 260,45 270,30 350,30 360,8
-              375,52 390,30 440,30 450,22 460,38 470,30 550,30 560,5
-              575,55 590,30 640,30 650,18 660,42 670,30 750,30 760,10
-              775,50 790,30 840,30 850,15 860,45 870,30 950,30 960,8
-              975,52 990,30 1040,30 1050,22 1060,38 1070,30 1150,30
-              1160,5 1175,55 1190,30 1240,30 1250,18 1260,42 1270,30
-              1350,30 1360,10 1375,50 1390,30 1440,30 1450,15 1460,45
-              1470,30 1550,30 1560,8 1575,52 1590,30 1640,30 1650,22
-              1660,38 1670,30 1750,30 1760,5 1775,55 1790,30 1840,30
-              1850,18 1860,42 1870,30 1950,30 1960,10 1975,50 1990,30
-              2000,30"/>
-  </svg>
-</div>
+<!-- Navbar -->
+<nav class="navbar px-3 py-2 mb-4">
+  <span class="navbar-brand">
+    <i class="bi bi-activity me-1"></i> Seizure Detection
+  </span>
+  <span class="navbar-text">EEG  ·  CNN + LSTM</span>
+</nav>
 
-<!-- ── Header ───────────────────────────────────────────────────────── -->
-<header>
-  <div class="header-inner">
-    <div class="logo-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round">
-        <path d="M2 12h3l2-8 3 16 2-10 2 6 2-4 2 6 1-6h3"/>
-      </svg>
+<div class="container" style="max-width: 900px;">
+
+  <!-- Bước 1: Upload -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <i class="bi bi-upload me-1"></i> Tải file EEG
     </div>
-    <h1>Seizure <span>Detection</span></h1>
-    <div class="badge">EEG · CNN+LSTM</div>
-  </div>
-</header>
-
-<!-- ── Main ─────────────────────────────────────────────────────────── -->
-<main>
-  <div class="wrap">
-
-    <!-- 01 — Upload -->
-    <div class="upload-section">
-      <div class="section-label">01 — Tải file EEG</div>
-
+    <div class="card-body">
       <div id="drop-zone" onclick="document.getElementById('file-input').click()">
-        <div class="upload-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-               stroke="#00d4ff" stroke-width="2" stroke-linecap="round">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
-        </div>
-        <div class="upload-title">Kéo thả hoặc click để chọn file</div>
-        <div class="upload-sub">Định dạng: <strong>.edf</strong> &nbsp;·&nbsp; EEG/Seizures/Normal</div>
+        <i class="bi bi-file-earmark-medical"></i>
+        <p>Kéo thả hoặc click để chọn file</p>
+        <small>Định dạng: <strong>.edf</strong> &nbsp;·&nbsp; EEG/Seizures/Normal</small>
       </div>
+      <input type="file" id="file-input" accept=".edf" style="display:none" />
 
-      <input type="file" id="file-input" accept=".edf">
-
-      <div class="threshold-row" style="margin-top:16px;">
-        <label for="thresh-slider">Ngưỡng seizure:</label>
-        <input type="range" id="thresh-slider" min="10" max="90" value="20" step="5">
-        <span id="thresh-val">0.20</span>
-        <label for="thresh-note">Ngưỡng mặc định của model là 0.20</label>
-        <button class="btn-analyze" id="btn-run" disabled onclick="runAnalysis()">
-          ▶ &nbsp;Phân tích
+      <div class="mt-3 d-flex align-items-center gap-3 flex-wrap">
+        <label class="mb-0 text-muted small">Ngưỡng seizure:</label>
+        <input type="range" id="thresh-slider" min="10" max="90" value="20" step="5"
+               class="form-range" style="max-width:200px" />
+        <span class="badge bg-primary" id="thresh-val">0.20</span>
+        <small class="text-muted" id="thresh-hint">Ngưỡng mặc định của model là 0.20</small>
+        <button class="btn btn-primary" id="btn-run" disabled onclick="window.runAnalysis()">
+          <i class="bi bi-play-fill"></i> Phân tích
         </button>
       </div>
-    </div>
 
-    <!-- Error -->
-    <div class="error-box" id="error-box"></div>
+      <div class="alert alert-danger mt-3 d-none" id="error-box"></div>
 
-    <!-- Progress -->
-    <div id="progress-wrap">
-      <div class="prog-label">
-        <span>Đang xử lý pipeline...</span>
-        <span id="prog-pct">0%</span>
-      </div>
-      <div class="prog-bar-bg">
-        <div class="prog-bar" id="prog-bar"></div>
-      </div>
-      <div class="prog-spinner">
-        <div class="dot-pulse"><span></span><span></span><span></span></div>
-        <span id="prog-status">Đọc file EDF...</span>
-      </div>
-    </div>
-
-    <!-- 02 — Summary -->
-    <div id="summary">
-      <div class="section-label">02 — Tổng quan</div>
-      <div class="cards">
-        <div class="card c-total">
-          <div class="card-label">Tổng windows</div>
-          <div class="card-val" id="s-total">—</div>
-          <div class="card-sub" id="s-dur">—</div>
+      <div class="mt-3 d-none" id="progress-wrap">
+        <div class="d-flex justify-content-between small text-muted mb-1">
+          <span id="prog-status">Đang xử lý...</span>
+          <span id="prog-pct">0%</span>
         </div>
-        <div class="card c-seizure">
-          <div class="card-label">Seizure</div>
-          <div class="card-val" id="s-seizure">—</div>
-          <div class="card-sub" id="s-seizure-pct">—</div>
-        </div>
-        <div class="card c-normal">
-          <div class="card-label">Normal</div>
-          <div class="card-val" id="s-normal">—</div>
-          <div class="card-sub" id="s-normal-pct">—</div>
-        </div>
-        <div class="card c-time">
-          <div class="card-label">Thời gian xử lý</div>
-          <div class="card-val" id="s-time">—</div>
-          <div class="card-sub">giây</div>
+        <div class="progress" style="height:6px">
+          <div class="progress-bar progress-bar-striped progress-bar-animated"
+               id="prog-bar" style="width:0%"></div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- 03 — Timeline -->
-    <div id="timeline-section">
-      <div class="section-label" style="margin-top:36px;">03 — Timeline</div>
-      <div class="timeline-bar" id="tl-bar"></div>
-      <div class="tl-axis"      id="tl-axis"></div>
-      <div class="tl-tooltip"   id="tl-tooltip"></div>
+  <!-- Bước 2–4: Kết quả (ẩn ban đầu) -->
+  <div id="result-section" class="d-none">
 
-      <!-- 04 — Table -->
-      <div class="section-label">04 — Chi tiết từng window</div>
-      <div class="table-wrap">
-        <div class="table-header">
-          <div class="table-title">Kết quả phân loại</div>
-          <div class="filter-btns">
-            <button class="filter-btn active-all"
-                    onclick="window.setFilter('all')"
-                    id="fb-all">Tất cả</button>
-            <button class="filter-btn"
-                    onclick="window.setFilter('seizure')"
-                    id="fb-seizure">Seizure</button>
-            <button class="filter-btn"
-                    onclick="window.setFilter('normal')"
-                    id="fb-normal">Normal</button>
+    <!-- Bước 2: Tổng quan -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <i class="bi bi-bar-chart-line me-1"></i> Kết quả tổng quan
+      </div>
+      <div class="card-body">
+        <div id="result-alert" class="alert mb-3"></div>
+
+        <div class="row g-3 mb-2">
+          <div class="col-6 col-md-3">
+            <div class="stat-box total">
+              <div class="stat-number" id="s-total">—</div>
+              <div class="stat-label">Tổng số windows</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-box seizure">
+              <div class="stat-number" id="s-seizure">—</div>
+              <div class="stat-label">Windows seizure</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-box normal">
+              <div class="stat-number" id="s-normal">—</div>
+              <div class="stat-label">Windows bình thường</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-box time">
+              <div class="stat-number" id="s-time">—</div>
+              <div class="stat-label">Thời gian xử lý (s)</div>
+            </div>
           </div>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Thời gian bắt đầu</th>
-              <th>Khoảng thời gian</th>
-              <th>Kết quả</th>
-              <th>Xác suất seizure</th>
-            </tr>
-          </thead>
-          <tbody id="results-tbody"></tbody>
-        </table>
-        <div class="pagination" id="pagination"></div>
+
+        <small class="text-muted" id="s-meta"></small>
       </div>
     </div>
 
-  </div><!-- /.wrap -->
-</main>
+    <!-- Bước 3: Timeline -->
+    <div class="card mb-4">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-calendar-range me-1"></i> Timeline bản ghi</span>
+        <div class="d-flex gap-3 small align-items-center">
+          <span><span class="legend-dot" style="background:#d93025"></span> Seizure</span>
+          <span><span class="legend-dot" style="background:#34a853"></span> Bình thường</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="timeline-bar"></div>
+        <div id="tl-axis"></div>
+        <div id="tl-tooltip"></div>
+        <p class="text-muted small mt-2 mb-0">
+          <i class="bi bi-info-circle me-1"></i>Di chuột lên timeline để xem chi tiết.
+        </p>
+      </div>
+    </div>
 
-<!-- ── Scripts (ES modules) ─────────────────────────────────────────── -->
+    <!-- Bước 4: Danh sách đoạn seizure -->
+    <div class="card mb-5">
+      <div class="card-header">
+        <i class="bi bi-exclamation-triangle me-1 text-danger"></i>
+         Các đoạn seizure phát hiện được
+      </div>
+      <div class="card-body p-0">
+        <div id="no-seizure-msg" class="text-center text-success p-4 d-none">
+          <i class="bi bi-check-circle fs-2"></i>
+          <p class="mt-2 mb-0 fw-semibold">Không phát hiện seizure trong bản ghi này.</p>
+        </div>
+        <table class="table table-hover mb-0" id="seizure-table">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Bắt đầu</th>
+              <th>Kết thúc</th>
+              <th>Độ dài</th>
+              <th>Xác suất TB</th>
+            </tr>
+          </thead>
+          <tbody id="seizure-tbody"></tbody>
+        </table>
+      </div>
+      <div class="card-footer text-muted small" id="seizure-footer"></div>
+    </div>
+
+  </div><!-- /result-section -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module" src="js/app.js"></script>
-
 </body>
 </html>
