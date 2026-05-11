@@ -8,6 +8,8 @@ Cấu trúc:
     schemas.py  → cấu trúc dữ liệu request/response
     main.py     → API endpoints (file này)
 """
+import sys, os
+sys.path.insert(0, os.path.dirname(__file__))
 import os
 import gc
 import tempfile
@@ -19,10 +21,10 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.config import FS, WINDOW_SEC, STEP_SEC, FREQ_MIN, FREQ_MAX, SEQ_LEN, THRESHOLD
-from backend.model import load_model, model, device
-from backend.pipeline import segment_to_pil, predict_sequence
-from backend.schemas import WindowResult, PredictionResponse
+from config import FS, WINDOW_SEC, STEP_SEC, FREQ_MIN, FREQ_MAX, SEQ_LEN, THRESHOLD
+from model import load_model, model, device
+from pipeline import segment_to_pil, predict_sequence
+from schemas import WindowResult, PredictionResponse
 
 mne.set_log_level("WARNING")
 
