@@ -19,10 +19,10 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from config import FS, WINDOW_SEC, STEP_SEC, FREQ_MIN, FREQ_MAX, SEQ_LEN, THRESHOLD
-from model import load_model, model, device
-from pipeline import segment_to_pil, predict_sequence
-from schemas import WindowResult, PredictionResponse
+from backend.config import FS, WINDOW_SEC, STEP_SEC, FREQ_MIN, FREQ_MAX, SEQ_LEN, THRESHOLD
+from backend.model import load_model, model, device
+from backend.pipeline import segment_to_pil, predict_sequence
+from backend.schemas import WindowResult, PredictionResponse
 
 mne.set_log_level("WARNING")
 

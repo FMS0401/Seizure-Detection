@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from torchvision import models, transforms
 
-from config import MODEL_PATH, SEQ_LEN, IMG_SIZE
+from backend.config import MODEL_PATH, SEQ_LEN, IMG_SIZE
 
 # ── Device ────────────────────────────────────────────────────────────
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

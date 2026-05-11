@@ -6,7 +6,7 @@
 
 // ── State ─────────────────────────────────────────────────────────────
 let _allResults = [];
-let _threshold  = 0.50;
+let _threshold  = 0.20;
 
 export const getAllResults = () => _allResults;
 export const getThreshold = () => _threshold;

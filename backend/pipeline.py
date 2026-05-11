@@ -11,13 +11,13 @@ import pywt
 import torch
 from PIL import Image as PILImage
 
-from config import (
+from backend.config import (
     FS, FREQ_MIN, FREQ_MAX,
     N_MELS, N_FFT, HOP_DENOM,
     USE_WAVELET, EEG_CHAINS,
     THRESHOLD, SEQ_LEN,
 )
-import model as mdl   # import module, không import biến trực tiếp
+import backend.model as mdl   # import module, không import biến trực tiếp
 
 
 # ────────────────────────────── Channel helpers ───────────────────────

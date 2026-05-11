@@ -11,7 +11,6 @@ class WindowResult(BaseModel):
     end_sec:     float
     label:       str
     prob:        float
-    confidence:  float
 
 
 class PredictionResponse(BaseModel):
