@@ -7,6 +7,7 @@ numpy==1.26.4
 librosa==0.10.2
 PyWavelets==1.6.0
 Pillow==10.3.0
-torch>=2.0.0
-torchvision>=0.15.0
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.2.2+cpu
+torchvision==0.17.2+cpu
 pydantic==2.7.1
