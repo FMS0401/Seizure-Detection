@@ -1,19 +1,13 @@
 """
-main.py — FastAPI routes (chỉ chứa API, logic nằm ở các file khác)
-
-Cấu trúc:
-    config.py   → hằng số
-    model.py    → kiến trúc CNN-LSTM + load
-    pipeline.py → xử lý EEG, tạo spectrogram, predict
-    schemas.py  → cấu trúc dữ liệu request/response
-    main.py     → API endpoints (file này)
+main.py — Load EDF 1 lần, sliding buffer, tối ưu cho Railway/Render free
 """
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
-import os
+
 import gc
 import tempfile
 import time
+import torch
 import mne
 
 from collections import deque
@@ -26,11 +20,10 @@ from model import load_model, model, device
 from pipeline import segment_to_pil, predict_sequence
 from schemas import WindowResult, PredictionResponse
 
+torch.set_num_threads(1)
 mne.set_log_level("WARNING")
 
-# ── App ───────────────────────────────────────────────────────────────
 app = FastAPI(title="Seizure Detection API")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,14 +31,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# ── Startup ───────────────────────────────────────────────────────────
 @app.on_event("startup")
 def startup():
     load_model()
 
-
-# ── Health check ──────────────────────────────────────────────────────
 @app.get("/health")
 def health():
     return {
@@ -55,8 +44,6 @@ def health():
         "threshold":    THRESHOLD,
     }
 
-
-# ── Predict ───────────────────────────────────────────────────────────
 @app.post("/predict", response_model=PredictionResponse)
 async def predict(file: UploadFile = File(...)):
     if not file.filename.lower().endswith(".edf"):
@@ -65,7 +52,6 @@ async def predict(file: UploadFile = File(...)):
     t_start = time.time()
     content = await file.read()
 
-    # Ghi file tạm
     with tempfile.NamedTemporaryFile(suffix=".edf", delete=False) as tmp:
         tmp.write(content)
         tmp_path = tmp.name
@@ -74,7 +60,7 @@ async def predict(file: UploadFile = File(...)):
     gc.collect()
 
     try:
-        # 1. Load & preprocess EDF
+        # 1. Load EDF 1 lần duy nhất
         raw = mne.io.read_raw_edf(tmp_path, preload=True, verbose=False)
         fs  = int(raw.info["sfreq"])
         if fs != FS:
@@ -88,6 +74,7 @@ async def predict(file: UploadFile = File(...)):
         n_samp   = data.shape[1]
         duration = n_samp / fs
 
+        # Giải phóng MNE object, chỉ giữ numpy array
         del raw
         gc.collect()
 
@@ -98,24 +85,24 @@ async def predict(file: UploadFile = File(...)):
         if not all_starts:
             raise HTTPException(400, "File quá ngắn để tạo window")
 
-        # 2. Sliding buffer — chỉ giữ SEQ_LEN ảnh trong RAM
+        # 2. Sliding buffer — chỉ giữ SEQ_LEN+pad ảnh trong RAM
         pad     = SEQ_LEN // 2
         buf     = deque()
         results = []
 
+        def make_pil(idx):
+            s = all_starts[idx]
+            return segment_to_pil(data[:, s:s + win_samp], ch_names, fs)
+
         # Pre-fill buffer
         for j in range(min(pad + 1, len(all_starts))):
-            s = all_starts[j]
-            buf.append(segment_to_pil(data[:, s:s + win_samp], ch_names, fs))
+            buf.append(make_pil(j))
 
         for i, s in enumerate(all_starts):
-            # Thêm ảnh tương lai vào buffer
             future_idx = i + pad + 1
             if future_idx < len(all_starts):
-                fs_ = all_starts[future_idx]
-                buf.append(segment_to_pil(data[:, fs_:fs_ + win_samp], ch_names, fs))
+                buf.append(make_pil(future_idx))
 
-            # Lấy SEQ_LEN ảnh từ buffer
             buf_list = list(buf)
             if len(buf_list) >= SEQ_LEN:
                 center = len(buf_list) // 2
@@ -136,11 +123,9 @@ async def predict(file: UploadFile = File(...)):
                 prob       = pred["prob"],
             ))
 
-            # Xóa ảnh cũ khỏi buffer
             if len(buf) > SEQ_LEN + pad:
                 buf.popleft()
 
-            # Dọn RAM mỗi 50 windows
             if i % 50 == 0:
                 gc.collect()
 
@@ -163,8 +148,6 @@ async def predict(file: UploadFile = File(...)):
     finally:
         os.unlink(tmp_path)
 
-
-# ── Serve frontend ────────────────────────────────────────────────────
 _frontend = os.path.join(os.path.dirname(__file__), "..", "frontend")
 if os.path.exists(_frontend):
     app.mount("/", StaticFiles(directory=_frontend, html=True), name="frontend")
