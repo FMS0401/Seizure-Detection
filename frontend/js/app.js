@@ -1,6 +1,5 @@
 /**
  * app.js — Entry point duy nhất
- * Gộp api + timeline + seizure-events vào 1 file cho dễ quản lý
  */
 
 'use strict';

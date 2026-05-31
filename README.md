@@ -1,106 +1,104 @@
-# NeuroScan — EEG Seizure Detection Web App
+# EEG Seizure Detection
 
-Deploy pipeline: `.edf` → windowing → Mel spectrogram → CNN+LSTM → kết quả từng window
+Ứng dụng web phát hiện cơn động kinh từ file EEG (`.edf`) sử dụng mô hình CNN + LSTM.
+
+---
+
+## Yêu cầu cài đặt
+
+- [Python 3.9+](https://www.python.org/downloads/)
+- [Visual Studio Code](https://code.visualstudio.com/)
+- Extension **Python** (của Microsoft) cài trong VS Code
+
+---
 
 ## Cấu trúc thư mục
 
 ```
 eeg-app/
 ├── backend/
+│   ├── __init__.py
+│   ├── config.py
 │   ├── main.py           # FastAPI app — toàn bộ pipeline inference
-│   └── requirements.txt
+│   ├── model.py
+│   ├── pipeline.py
+│   ├── requirements.txt
+│   └── schemas.py
 ├── frontend/
+│   ├── css
+│   │   └── style.css
+│   ├── js
+│   │   ├── app.js
+│   │   └── ui.js
 │   └── index.html        # Giao diện web
 ├── model/
 │   └── best_cnn_lstm.pth ← ĐẶT MODEL VÀO ĐÂY
-└── Dockerfile
+├── .gitignore
+├── Dockerfile
+├── railway.json
+└── README.md
 ```
 
-## Cài đặt & chạy
+## Cài đặt & Chạy
 
-### 1. Đặt model vào đúng chỗ
+### 1. Tạo môi trường ảo
 
 ```bash
-cp /content/best_cnn_lstm.pth model/best_cnn_lstm.pth
+python -m venv venv
 ```
 
-### 2. Cài dependencies
+Kích hoạt môi trường ảo:
 
 ```bash
-cd backend
-pip install -r requirements.txt
+# Windows
+venv\Scripts\activate
+
+# Mac / Linux
+source venv/bin/activate
 ```
 
-### 3. Chạy server
+> Sau khi kích hoạt thành công, đầu dòng terminal sẽ hiện `(venv)`.
+
+### 2. Cài thư viện
 
 ```bash
-# Từ thư mục gốc eeg-app/
-uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+pip install -r backend/requirements.txt
 ```
 
-Mở trình duyệt: **http://localhost:8000**
+### 3. Đặt file model
+
+Sao chép file `best_cnn_lstm.pth` vào thư mục `model/`:
+
+> Nếu không có file model, app vẫn chạy được ở **chế độ DEMO** (kết quả ngẫu nhiên).
+
+### 4. Chạy server
+
+```bash
+uvicorn backend.main:app --reload
+```
+
+Terminal sẽ hiện thông báo:
+
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000
+```
+
+### 5. Mở trình duyệt
+
+Truy cập: **http://localhost:8000**
 
 ---
 
-### Docker (khuyến nghị cho production)
+## Cách sử dụng
 
-```bash
-docker build -t neuroscan .
-docker run -p 8000:8000 -v $(pwd)/model:/app/model neuroscan
-```
-
----
-
-## Config quan trọng trong `backend/main.py`
-
-| Biến | Giá trị | Mô tả |
-|------|---------|-------|
-| `THRESHOLD` | `0.50` | **Đổi thành `best_thresh` từ training của bạn** |
-| `FS` | `256` | Sample rate |
-| `WINDOW_SEC` | `8` | Độ dài mỗi window |
-| `STEP_SEC` | `4` | Bước trượt |
-| `SEQ_LEN` | `5` | Số frame cho LSTM |
-
-> ⚠️ **Quan trọng**: Thay `THRESHOLD = 0.5` bằng `best_thresh` tối ưu đã tìm được trên validation set.
+1. Kéo thả hoặc click để chọn file `.edf`
+2. Điều chỉnh ngưỡng seizure nếu cần (mặc định: 0.20)
+3. Nhấn **Phân tích**
+4. Xem kết quả trên timeline và danh sách các đoạn seizure phát hiện được
 
 ---
 
-## API Endpoints
+## Lưu ý
 
-### `POST /predict`
-Upload file EDF, trả về JSON với kết quả từng window.
-
-**Request**: `multipart/form-data` với field `file` là file `.edf`
-
-**Response**:
-```json
-{
-  "filename": "chb01_03.edf",
-  "duration_sec": 3600.0,
-  "fs": 256,
-  "n_windows": 899,
-  "n_seizure": 12,
-  "n_normal": 887,
-  "windows": [
-    {
-      "window_idx": 0,
-      "start_sec": 0.0,
-      "end_sec": 8.0,
-      "label": "normal",
-      "prob": 0.0342,
-      "confidence": 0.9316
-    },
-    ...
-  ],
-  "processing_ms": 45231
-}
-```
-
-### `GET /health`
-Kiểm tra trạng thái server & model.
-
----
-
-## Demo mode
-
-Nếu không có file model, app chạy ở **DEMO mode** — predict random để test giao diện.
+- Mỗi lần mở terminal mới cần kích hoạt lại môi trường ảo (Bước 3).
+- Kết quả chỉ mang tính tham khảo, không thay thế chẩn đoán y tế.
