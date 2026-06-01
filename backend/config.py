@@ -21,7 +21,7 @@ USE_WAVELET = "haar"    # None để tắt
 
 # ── Model ─────────────────────────────────────────────────────────────
 SEQ_LEN     = 5         # Số frames đưa vào LSTM
-THRESHOLD   = 0.2       # Ngưỡng phân loại seizure
+THRESHOLD   = 0.5       # Ngưỡng phân loại seizure
 MODEL_PATH  = os.environ.get("MODEL_PATH", "./model/best_cnn_lstm.pth")
 
 # ── EEG bipolar chains ────────────────────────────────────────────────
